@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const ReactWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -18,14 +19,17 @@ module.exports = {
     },
     //observa as mudanças nos arquivos e cria um servidor estático
     devServer: {
-        static: path.resolve(__dirname, 'public')
+        static: path.resolve(__dirname, 'public'),
+        hot: true
     },
     //não precisa importar o bundle.js na index.html
     plugins: [
+        //fast refresh adicionado ao ambiente de desenvolvimento (persiste os estados)
+        isDevelopment && new ReactWebpackPlugin(),
         new HtmlWebpackPlugin({
             template: path.resolve(__dirname, 'public', 'index.html')
         })
-    ],
+    ].filter(Boolean),
     //como a aplicação vai se comportar ao importar arquivos
     //não precisa mais adicionar a extensão ao importar o arquivo
     module: {
@@ -35,7 +39,14 @@ module.exports = {
                 test: /\.jsx$/,
                 //podemos excluir a node_modules, pois os arquivos de lá já são entendidos pelo browser
                 exclude: /node_modules/,
-                use: 'babel-loader'
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                        plugins: [
+                            isDevelopment && require.resolve('react-refresh/babel')
+                        ].filter(Boolean)
+                    }
+                }
             },
             {
                 //expressão regular para ver se termina em .css
